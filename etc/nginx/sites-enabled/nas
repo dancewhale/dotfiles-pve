@@ -1,0 +1,69 @@
+
+server {
+	listen 9999;
+	listen [::]:9999;
+
+	server_name dwhale.tpddns.cn;
+
+	root /var/www/html;
+	index index.html index.htm index.nginx-debian.html;
+
+        location /calibre-web {
+            proxy_pass              http://localhost:8083;
+            proxy_set_header        Host            $http_host;
+            proxy_set_header        X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_set_header        X-Scheme        $scheme;
+            proxy_set_header        X-Script-Name   /calibre-web;
+        }
+
+        location /bt/ {
+            proxy_pass         http://127.0.0.1:8080/;
+            proxy_http_version 1.1;
+        
+            proxy_set_header   Host               127.0.0.1:8080;
+            proxy_set_header   X-Forwarded-Host   $http_host;
+            proxy_set_header   X-Forwarded-For    $remote_addr;
+        
+            # not used by qBittorrent
+            #proxy_set_header   X-Forwarded-Proto  $scheme;
+            #proxy_set_header   X-Real-IP          $remote_addr;
+        
+            # optionally, you can adjust the POST request size limit, to allow adding a lot of torrents at once
+            #client_max_body_size 100M;
+        }
+
+        location /plex/ {
+            rewrite /plex(/.*) $1 break;
+        
+            proxy_pass http://localhost:32400;
+            proxy_http_version 1.1;
+            proxy_set_header Accept-Encoding "";
+            proxy_set_header Upgrade $http_upgrade;
+            proxy_set_header Connection 'upgrade';
+            proxy_set_header Host $http_host;
+            proxy_cache_bypass $http_upgrade;
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+            proxy_redirect off;
+        
+            sub_filter '/web/' '/plex/web/';
+            sub_filter_types *;
+            sub_filter_once off;
+        }
+
+        location /dsm/   {
+            proxy_pass              http://192.168.2.112:8800/;
+            proxy_redirect          off;
+            proxy_set_header        Host $host;
+            proxy_set_header        X-Real-IP $remote_addr;
+            proxy_set_header        X-Forwarded-For $proxy_add_x_forwarded_for;
+        }
+
+        location /photo/ {
+            proxy_pass              http://192.168.2.112:8800/photo/;
+            proxy_redirect          off;
+            proxy_set_header        Host $host;
+            proxy_set_header        X-Real-IP $remote_addr;
+            proxy_set_header        X-Forwarded-For $proxy_add_x_forwarded_for;
+        }
+}
